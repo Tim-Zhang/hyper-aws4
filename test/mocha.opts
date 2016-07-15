@@ -1,0 +1,5 @@
+-R progress
+-r should
+-t 30000
+
+./test/*.js
