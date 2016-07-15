@@ -5,7 +5,7 @@
   "main": "dst/index.js",
   "scripts": {
     "build": "babel src --out-dir dst",
-    "test": "./node_modules/.bin/mocha"
+    "test": "./node_modules/.bin/istanbul cover _mocha"
   },
   "repository": {
     "type": "git",
@@ -28,7 +28,8 @@
     "bluebird": "^3.4.1",
     "mocha": "^2.5.3",
     "node-fetch": "^1.5.3",
-    "should": "^9.0.2"
+    "should": "^9.0.2",
+    "istanbul": "~0.4.4"
   },
   "dependencies": {
     "lodash": "^4.13.1"
