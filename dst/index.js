@@ -48,7 +48,7 @@ var Aws4 = function () {
 
     _classCallCheck(this, Aws4);
 
-    Object.assign(this, { url: url, body: body, method: method.toUpperCase(), credential: credential });
+    _lodash2.default.extend(this, { url: url, body: body, method: method.toUpperCase(), credential: credential });
 
     var urlObj = _url2.default.parse(url);
     this.path = urlObj.pathname;

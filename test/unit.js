@@ -9,7 +9,7 @@ const credential = { // Fake
 const signOptionGet = {
   url: 'https://us-west-1.hyper.sh/version',
   date: '20160614T100221Z',
-  credential
+  credential: credential
 }
 
 const signResultGet = {
@@ -25,7 +25,7 @@ const signOptionPost = {
   method: 'POST',
   date: '20160709T034006Z',
   body: {"fromSrc":"http://image-tarball.s3.amazonaws.com/test/public/helloworld.tar.gz","quiet":false},
-  credential
+  credential: credential
 }
 
 const signResultPost = {
@@ -36,16 +36,14 @@ const signResultPost = {
   Authorization: 'HYPER-HMAC-SHA256 Credential=5O4KAD63BNZBF9KON6BVP655/20160709/us-west-1/hyper/hyper_request, SignedHeaders=content-type;host;x-hyper-content-sha256;x-hyper-date, Signature=2e90b01cd531a2189f3253d2312f4fc94bc9612fcc039c36513352261ca997f6'
 }
 
-describe('lib/aws4', () => {
-  describe('sign', () => {
-    it('header with GET method should sign correct', () => {
-      aws4.sign(signOptionGet).should.match(result => _.isEqual(result, signResultGet))
-      // console.log(aws4.sign(signOptionGet))
+describe('lib/aws4', function() {
+  describe('sign', function() {
+    it('header with GET method should sign correct', function() {
+      aws4.sign(signOptionGet).should.match(function(result) {return _.isEqual(result, signResultGet)})
     })
 
-    it('header with POST method should sign correct', () => {
-      aws4.sign(signOptionPost).should.match(result => _.isEqual(result, signResultPost))
-      // console.log(aws4.sign(signOptionPost))
+    it('header with POST method should sign correct', function() {
+      aws4.sign(signOptionPost).should.match(function(result) {return _.isEqual(result, signResultPost)})
     })
   })
 })

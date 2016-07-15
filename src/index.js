@@ -13,7 +13,7 @@ const KeyPartsPrefix    = 'HYPER'
 
 class Aws4 {
   constructor({url, method = 'GET', body = '', credential, date}) {
-    Object.assign(this, {url, body, method: method.toUpperCase(), credential})
+    _.extend(this, {url, body, method: method.toUpperCase(), credential})
 
     const urlObj  = urllib.parse(url)
     this.path     = urlObj.pathname
