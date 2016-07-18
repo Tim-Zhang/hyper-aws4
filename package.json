@@ -1,6 +1,6 @@
 {
   "name": "hyper-aws4",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "AWS Signature Version 4 Signing Library for Hyper",
   "main": "dst/index.js",
   "scripts": {
