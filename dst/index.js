@@ -28,25 +28,28 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var SignedHeaders = 'content-type;host;x-hyper-content-sha256;x-hyper-date';
+var HeaderDate = 'X-Hyper-Date';
 var HeaderContentHash = 'X-Hyper-Content-Sha256';
 var Algorithm = 'HYPER-HMAC-SHA256';
-var Region = 'us-west-1';
+var DefaultRegion = 'us-west-1';
 var Service = 'hyper';
 var KeyPartsRequest = 'hyper_request';
 var KeyPartsPrefix = 'HYPER';
 
 var Aws4 = function () {
-  function Aws4(_ref) {
-    var url = _ref.url;
-    var _ref$method = _ref.method;
-    var method = _ref$method === undefined ? 'GET' : _ref$method;
-    var _ref$body = _ref.body;
-    var body = _ref$body === undefined ? '' : _ref$body;
-    var credential = _ref.credential;
-    var date = _ref.date;
-
+  function Aws4(req, credential) {
     _classCallCheck(this, Aws4);
+
+    var url = req.url;
+    var _req$method = req.method;
+    var method = _req$method === undefined ? 'GET' : _req$method;
+    var _req$body = req.body;
+    var body = _req$body === undefined ? '' : _req$body;
+    var date = req.date;
+    var _req$headers = req.headers;
+    var headers = _req$headers === undefined ? {} : _req$headers;
+
+    if (!credential) credential = req.credential;
 
     _lodash2.default.extend(this, { url: url, body: body, method: method.toUpperCase(), credential: credential });
 
@@ -54,11 +57,25 @@ var Aws4 = function () {
     this.path = urlObj.pathname;
     this.host = urlObj.host;
     this.query = _querystring2.default.parse(urlObj.query) || {};
+    this.date = date || this.amzDate;
 
-    this.date = date || this.amzDate();
+    this.headers = this.prepareHeaders(headers);
   }
 
   _createClass(Aws4, [{
+    key: 'prepareHeaders',
+    value: function prepareHeaders(headers) {
+      var _$extend;
+
+      var date = this.date;
+      var payloadHash = this.payloadHash;
+      var host = this.host;
+
+      return _lodash2.default.extend((_$extend = {
+        'Content-Type': 'application/json'
+      }, _defineProperty(_$extend, HeaderDate, date), _defineProperty(_$extend, HeaderContentHash, payloadHash), _defineProperty(_$extend, 'Host', host), _$extend), headers);
+    }
+  }, {
     key: 'hmac',
     value: function hmac(key, string, encoding) {
       return _crypto2.default.createHmac('sha256', key).update(string, 'utf8').digest(encoding);
@@ -78,24 +95,42 @@ var Aws4 = function () {
       });
     }
   }, {
+    key: 'sign',
+
+
+    // Export
+    // Return signed headers
+    value: function sign() {
+      var credential = this.credential.accessKey + '/' + this.credentialScope;
+      var authorization = Algorithm + ' Credential=' + credential + ', SignedHeaders=' + this.signedHeaders + ', Signature=' + this.signature;
+
+      return _lodash2.default.extend({ Authorization: authorization }, this.headers);
+    }
+  }, {
+    key: 'region',
+    get: function get() {
+      var index = this.host.indexOf('.hyper.sh');
+      return index === -1 ? DefaultRegion : this.host.slice(0, index);
+    }
+  }, {
     key: 'amzDate',
-    value: function amzDate() {
+    get: function get() {
       return new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');
     }
   }, {
     key: 'dateStamp',
-    value: function dateStamp() {
+    get: function get() {
       return this.date.slice(0, 8);
     }
   }, {
     key: 'payloadHash',
-    value: function payloadHash() {
+    get: function get() {
       var body = _lodash2.default.isString(this.body) ? this.body : JSON.stringify(this.body);
       return this.hash(body);
     }
   }, {
     key: 'canonicalPath',
-    value: function canonicalPath() {
+    get: function get() {
       var _this = this;
 
       var pathStr = this.path;
@@ -117,11 +152,11 @@ var Aws4 = function () {
     }
   }, {
     key: 'canonicalQuery',
-    value: function canonicalQuery() {
+    get: function get() {
       var query = this.query;
       if (_lodash2.default.isEmpty(query)) return '';
 
-      return this.encodeRfc3986(_querystring2.default.stringify(Object.keys(query).sort().reduce(function (obj, key) {
+      return this.encodeRfc3986(_querystring2.default.stringify(_lodash2.default.keys(query).sort().reduce(function (obj, key) {
         if (!key) return obj;
         obj[key] = !Array.isArray(query[key]) ? query[key] : query[key].slice().sort();
         return obj;
@@ -129,29 +164,42 @@ var Aws4 = function () {
     }
   }, {
     key: 'canonicalHeaders',
-    value: function canonicalHeaders() {
-      return 'content-type:application/json' + '\nhost:' + this.host + '\nx-hyper-content-sha256:' + this.payloadHash() + '\nx-hyper-date:' + this.date + '\n';
+    get: function get() {
+      var _this2 = this;
+
+      return _lodash2.default.keys(this.headers).sort(function (a, b) {
+        return a.toLowerCase() < b.toLowerCase() ? -1 : 1;
+      }).map(function (key) {
+        return key.toLowerCase() + ':' + _this2.headers[key];
+      }).join('\n') + '\n';
+    }
+  }, {
+    key: 'signedHeaders',
+    get: function get() {
+      return _lodash2.default.keys(this.headers).map(function (key) {
+        return key.toLowerCase();
+      }).sort().join(';');
     }
   }, {
     key: 'canonicalRequest',
-    value: function canonicalRequest() {
-      return [this.method, this.canonicalPath(), this.canonicalQuery(), this.canonicalHeaders(), SignedHeaders, this.payloadHash()].join('\n');
+    get: function get() {
+      return [this.method, this.canonicalPath, this.canonicalQuery, this.canonicalHeaders, this.signedHeaders, this.payloadHash].join('\n');
     }
   }, {
     key: 'credentialScope',
-    value: function credentialScope() {
-      return [this.dateStamp(), Region, Service, KeyPartsRequest].join('/');
+    get: function get() {
+      return [this.dateStamp, this.region, Service, KeyPartsRequest].join('/');
     }
   }, {
     key: 'stringToSign',
-    value: function stringToSign() {
-      return [Algorithm, this.date, this.credentialScope(), this.hash(this.canonicalRequest())].join('\n');
+    get: function get() {
+      return [Algorithm, this.date, this.credentialScope, this.hash(this.canonicalRequest)].join('\n');
     }
   }, {
     key: 'signingKey',
-    value: function signingKey() {
-      var kDate = this.hmac(KeyPartsPrefix + this.credential.secretKey, this.dateStamp()),
-          kRegion = this.hmac(kDate, Region),
+    get: function get() {
+      var kDate = this.hmac(KeyPartsPrefix + this.credential.secretKey, this.dateStamp),
+          kRegion = this.hmac(kDate, this.region),
           kService = this.hmac(kRegion, Service),
           kSigning = this.hmac(kService, KeyPartsRequest);
 
@@ -159,28 +207,8 @@ var Aws4 = function () {
     }
   }, {
     key: 'signature',
-    value: function signature() {
-      return this.hmac(this.signingKey(), this.stringToSign(), 'hex');
-    }
-
-    // Export
-    // Return signed headers
-
-  }, {
-    key: 'sign',
-    value: function sign() {
-      var _ref2;
-
-      var date = this.date;
-      var payloadHash = this.payloadHash();
-      var host = this.host;
-      var credential = this.credential.accessKey + '/' + this.credentialScope();
-      var authorization = Algorithm + ' Credential=' + credential + ', SignedHeaders=' + SignedHeaders + ', Signature=' + this.signature();
-
-      return _ref2 = {
-        'Content-Type': 'application/json',
-        'X-Hyper-Date': date
-      }, _defineProperty(_ref2, HeaderContentHash, payloadHash), _defineProperty(_ref2, 'Host', host), _defineProperty(_ref2, 'Authorization', authorization), _ref2;
+    get: function get() {
+      return this.hmac(this.signingKey, this.stringToSign, 'hex');
     }
   }]);
 
@@ -188,8 +216,8 @@ var Aws4 = function () {
 }();
 
 exports.default = {
-  sign: function sign(options) {
-    return new Aws4(options).sign();
+  sign: function sign(request, credential) {
+    return new Aws4(request, credential).sign();
   }
 };
 module.exports = exports['default'];
