@@ -1,9 +1,10 @@
 const fetch = require('node-fetch')
 const aws4  = require('../dst')
 
+// Replace this demo credential with yours before run the test
 const credential = {
-  accessKey: 'L8PKNB9XYYVO053LWL85JR6K',
-  secretKey: '48KDk6y1bk1F7PgoRBWwzh0q7K85dyWt8e1KWZwk'
+  accessKey: 'L8KYL2ZLVLZ8TOR8NPYA9RW5',
+  secretKey: 'J7KGB9bn75di1yo6XmGzAiGodO8a8eDikgGBLgje'
 }
 
 const signOptionGet = {
