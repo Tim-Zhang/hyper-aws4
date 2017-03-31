@@ -13,7 +13,7 @@ const KeyPartsPrefix    = 'HYPER'
 
 class Aws4 {
   constructor(req, credential) {
-    const {url, method = 'GET', body = '', date, headers = {}} = req
+    const {url, method = 'GET', body = '', date, headers = {}} = this.req = req
     if (!credential) credential = req.credential
 
     _.extend(this, {url, body, method: method.toUpperCase(), credential})
@@ -32,12 +32,12 @@ class Aws4 {
     const payloadHash = this.payloadHash
     const host = this.host
 
-    return _.extend({
+    return _.extend({}, headers, {
       'Content-Type'      : 'application/json',
       [HeaderDate]        : date,
       [HeaderContentHash] : payloadHash,
       Host                : host,
-    }, headers)
+    })
   }
 
   hmac(key, string, encoding) {
@@ -55,6 +55,8 @@ class Aws4 {
   }
 
   get region() {
+    if (this.req.region) return this.req.region
+
     const index = this.host.indexOf('.hyper.sh')
     return index === -1 ? DefaultRegion : this.host.slice(0, index)
   }

@@ -40,13 +40,15 @@ var Aws4 = function () {
   function Aws4(req, credential) {
     _classCallCheck(this, Aws4);
 
-    var url = req.url;
-    var _req$method = req.method;
+    var _req = this.req = req;
+
+    var url = _req.url;
+    var _req$method = _req.method;
     var method = _req$method === undefined ? 'GET' : _req$method;
-    var _req$body = req.body;
+    var _req$body = _req.body;
     var body = _req$body === undefined ? '' : _req$body;
-    var date = req.date;
-    var _req$headers = req.headers;
+    var date = _req.date;
+    var _req$headers = _req.headers;
     var headers = _req$headers === undefined ? {} : _req$headers;
 
     if (!credential) credential = req.credential;
@@ -71,9 +73,9 @@ var Aws4 = function () {
       var payloadHash = this.payloadHash;
       var host = this.host;
 
-      return _lodash2.default.extend((_$extend = {
+      return _lodash2.default.extend({}, headers, (_$extend = {
         'Content-Type': 'application/json'
-      }, _defineProperty(_$extend, HeaderDate, date), _defineProperty(_$extend, HeaderContentHash, payloadHash), _defineProperty(_$extend, 'Host', host), _$extend), headers);
+      }, _defineProperty(_$extend, HeaderDate, date), _defineProperty(_$extend, HeaderContentHash, payloadHash), _defineProperty(_$extend, 'Host', host), _$extend));
     }
   }, {
     key: 'hmac',
@@ -109,6 +111,8 @@ var Aws4 = function () {
   }, {
     key: 'region',
     get: function get() {
+      if (this.req.region) return this.req.region;
+
       var index = this.host.indexOf('.hyper.sh');
       return index === -1 ? DefaultRegion : this.host.slice(0, index);
     }
